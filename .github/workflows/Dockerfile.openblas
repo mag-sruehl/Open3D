@@ -8,8 +8,17 @@ ARG CCACHE_TAR_NAME
 RUN if [ -z "${CMAKE_VER}"       ]; then echo "Error: ARG CMAKE_VER       not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
 
-# Non-interactive dpkg
+# Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Build dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    libgl1 \
+    libgomp1 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
