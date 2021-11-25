@@ -1198,12 +1198,12 @@ if (WITH_FAISS)
 endif()
 
 # MKL/BLAS
-set(BUILD_BLAS_FROM_SOURCE ON)
+set(BLAS_BUILD_FROM_SOURCE ON)
 if(USE_BLAS)
     find_package(BLAS)
     find_package(LAPACK)
     find_package(LAPACKE)
-    if(NOT BUILD_BLAS_FROM_SOURCE AND BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+    if(NOT BLAS_BUILD_FROM_SOURCE AND BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
         message(STATUS "Using system BLAS/LAPACK")
         # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
         # Open3D. When building with this option, the Python wheel is less
@@ -1214,9 +1214,42 @@ if(USE_BLAS)
             ${LAPACKE_LIBRARIES}
         )
     else()
-        # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
-        set(BLAS_BUILD_FROM_SOURCE ON)
+
+        # Check gfortran installation.
+        find_program(gfortran_bin "gfortran")
+        if (gfortran_bin)
+            message(STATUS "gfortran found at ${gfortran}")
+        else()
+            message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
+                                "On Ubuntu, please install by `apt install gfortran`. "
+                                "On macOS, please install by `brew install gfortran`. ")
+        endif()
+
+        # Get gfortran library search directories.
+        execute_process(COMMAND ${gfortran_bin} -print-search-dirs
+            OUTPUT_VARIABLE gfortran_search_dirs
+            RESULT_VARIABLE RET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(RET AND NOT RET EQUAL 0)
+            message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
+        endif()
+        message(STATUS "gfortran_search_dirs: ${gfortran_search_dirs}")
+
+        # Parse gfortran library search directories into CMake list.
+        string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
+        if (match_result)
+            string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
+            message(STATUS "gfortran_lib_dirs: ${gfortran_lib_dirs}")
+        else()
+            message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
+        endif()
+
+        # Find libgfortran.a and libgcc.a inside the gfortran library search
+        # directories. This ensures that the library matches the compiler.
+        find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+        find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
 
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         open3d_import_3rdparty_library(3rdparty_blas
@@ -1227,8 +1260,8 @@ if(USE_BLAS)
             DEPENDS      ext_openblas
         )
         target_link_libraries(3rdparty_blas INTERFACE
-            /usr/lib/gcc/aarch64-linux-gnu/7/libgfortran.a
-            /usr/lib/gcc/aarch64-linux-gnu/7/libgcc.a
+            ${gfortran_lib}
+            ${gcc_lib}
         )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
