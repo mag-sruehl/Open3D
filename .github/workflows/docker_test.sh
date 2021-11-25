@@ -11,23 +11,28 @@
 
 set -euo pipefail
 
-__usage="USAGE:
+__usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    openblas-x86_64    : OpenBLAS x86_64
-    openblas-arm64     : OpenBLAS ARM64
-    2-bionic           : CUDA CI, 2-bionic
-    3-ml-shared-bionic : CUDA CI, 3-ml-shared-bionic
-    4-ml-bionic        : CUDA CI, 4-ml-bionic
-    5-ml-focal         : CUDA CI, 5-ml-focal
+    openblas-x86_64     : OpenBLAS x86_64
+    openblas-arm64      : OpenBLAS ARM64
+    openblas-arm64-wheel: OpenBLAS ARM64 test wheel with a minimal Docker
+    2-bionic            : CUDA CI, 2-bionic
+    3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
+    4-ml-bionic         : CUDA CI, 4-ml-bionic
+    5-ml-focal          : CUDA CI, 5-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
 
-print_usage_and_exit() {
-    echo "$__usage"
+print_usage_and_exit_docker_test() {
+    echo "$__usage_docker_test"
     exit 1
+}
+
+test_openblas_arm64_wheel() {
+    echo "Hello test_openblas_arm64_wheel()"
 }
 
 cuda_print_env() {
@@ -134,7 +139,7 @@ cpp_python_linking_uninstall_test() {
 
 if [[ "$#" -ne 1 ]]; then
     echo "Error: invalid number of arguments." >&2
-    print_usage_and_exit
+    print_usage_and_exit_docker_test
 fi
 echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
@@ -179,8 +184,11 @@ case "$1" in
         export BUILD_TENSORFLOW_OPS=OFF
         cpp_python_linking_uninstall_test
         ;;
+    openblas-arm64-wheel)
+        test_openblas_arm64_wheel
+        ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
-        print_usage_and_exit
+        print_usage_and_exit_docker_test
         ;;
 esac
