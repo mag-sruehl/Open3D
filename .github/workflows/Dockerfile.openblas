@@ -102,7 +102,10 @@ RUN python -m pip install -U \
 # -DBUILD_PYTORCH_OPS=OFF \
 # -DBUILD_UNIT_TESTS=ON \
 
-WORKDIR /root/Open3D
+RUN apt-get update && apt-get install -y \
+    clang-7 \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir build \
  && cd build \
  && cmake \
