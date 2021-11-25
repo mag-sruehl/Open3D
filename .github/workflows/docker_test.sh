@@ -15,13 +15,13 @@ __usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    openblas-x86_64     : OpenBLAS x86_64
-    openblas-arm64      : OpenBLAS ARM64
-    openblas-arm64-wheel: OpenBLAS ARM64 test wheel with a minimal Docker
-    2-bionic            : CUDA CI, 2-bionic
-    3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
-    4-ml-bionic         : CUDA CI, 4-ml-bionic
-    5-ml-focal          : CUDA CI, 5-ml-focal
+    openblas-x86_64          : OpenBLAS x86_64
+    openblas-arm64           : OpenBLAS ARM64
+    openblas-arm64-wheel-test: OpenBLAS ARM64 test wheel with a minimal Docker
+    2-bionic                 : CUDA CI, 2-bionic
+    3-ml-shared-bionic       : CUDA CI, 3-ml-shared-bionic
+    4-ml-bionic              : CUDA CI, 4-ml-bionic
+    5-ml-focal               : CUDA CI, 5-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
@@ -31,8 +31,20 @@ print_usage_and_exit_docker_test() {
     exit 1
 }
 
-test_openblas_arm64_wheel() {
-    echo "Hello test_openblas_arm64_wheel()"
+openblas-arm64_wheel_test() {
+    export DOCKER_TAG=open3d-ci:openblas-arm64-wheel-test
+    export PYTHON_VERSION=3.8
+
+    echo "[openblas-arm64_wheel_test()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[openblas-arm64_wheel_test()] BASE_IMAGE: ${BASE_IMAGE}"
+    echo "[openblas-arm64_wheel_test()] PYTHON_VERSION: ${PYTHON_VERSION}"
+
+    pushd "${HOST_OPEN3D_ROOT}"
+    docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+                 --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+                 -t "${DOCKER_TAG}" \
+                 -f .github/workflows/Dockerfile.openblas-wheel-test .
+    popd
 }
 
 cuda_print_env() {
@@ -184,8 +196,9 @@ case "$1" in
         export BUILD_TENSORFLOW_OPS=OFF
         cpp_python_linking_uninstall_test
         ;;
-    openblas-arm64-wheel)
-        test_openblas_arm64_wheel
+    openblas-arm64-wheel-test)
+        openblas-arm64_export_env
+        openblas-arm64_wheel_test
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
