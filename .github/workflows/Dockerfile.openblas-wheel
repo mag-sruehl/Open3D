@@ -1,3 +1,5 @@
+# Dockerfiel to *test* OpenBLAS wheel.
+
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
@@ -14,7 +16,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# Dependencies: basic
+# Minimal dependencies
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
@@ -35,8 +40,8 @@ RUN which python \
 
 ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 
-# # Open3D repo
-# # Always keep /root/Open3D as the WORKDIR
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
 COPY *.whl /
 
 # Open3D Python dependencies
