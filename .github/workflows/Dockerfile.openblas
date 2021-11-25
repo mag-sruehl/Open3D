@@ -20,13 +20,14 @@ ENV SUDO=command
 # wget    : for downloading
 # libgl1  : available on Ubuntu ARM desktop by default
 # libgomp1: available on Ubuntu ARM desktop by default
+# ccache  : only needed during docker build
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libgomp1 \
+    ccache \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
 RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh \
  && bash Miniconda3-latest-Linux-aarch64.sh -b \
@@ -34,23 +35,13 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.
  && conda --version
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 
-# Python 3.7
-RUN conda create -y -n open3d37 python=3.7 \
- && source activate open3d37
-RUN which python \
- && python --version
-
-# Python 3.7
-RUN conda create -y -n open3d38 python=3.8 \
- && source activate open3d38
-RUN which python \
- && python --version
-
-# Python 3.9
-RUN conda create -y -n open3d39 python=3.9 \
- && source activate open3d39
-RUN which python \
- && python --version
+# CMake
+# PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
+RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VER}.tar.gz \
+ && tar -xf ${CMAKE_VER}.tar.gz \
+ && cp -ar ${CMAKE_VER} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
@@ -58,73 +49,78 @@ COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
 
-# Open3D Python dependencies
-COPY ./util/ci_utils.sh /root/Open3D/util/
-COPY ./python/requirements.txt /root/Open3D/python/
-COPY ./python/requirements_jupyter.txt /root/Open3D/python/
-RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-conda with-cuda with-jupyter
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
 
-# # CMake
-# # PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
-# RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
-#  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VER}.tar.gz \
-#  && tar -xf ${CMAKE_VER}.tar.gz \
-#  && cp -ar ${CMAKE_VER} ${HOME}
-# ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
+# Python 3.7 ###################################################################
+RUN conda create -y -n open3d37 python=3.7 \
+ && source activate open3d37
+RUN which python \
+ && python --version
+RUN python -m pip install -U \
+    pip=="21.1.1" \
+    wheel=="0.35.1" \
+    setuptools=="50.3.2" \
+    yapf=="0.30.0" \
+    pytest=="6.0.1" \
+    scipy=="1.5.4"
 
-# # Download ccache from GCS bucket
-# # If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
-# # Example directory structure:
-# # - CCACHE_DIR        = ~/.cache/ccache
-# # - CCACHE_DIR_NAME   = ccache
-# # - CCACHE_DIR_PARENT = ~/.cache
-# RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && mkdir -p ${CCACHE_DIR_PARENT} \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
-#  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
-#  && mkdir -p ${CCACHE_DIR}
-# # We need to set ccache size explicitly with -M, otherwise the defualt size is
-# # *not* determined by ccache's default, but the downloaded ccache file's config.
-# RUN ccache -M 5G \
-#  && ccache -s
+# Download ccache from GCS bucket
+# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
+# Example directory structure:
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
+RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
+ && mkdir -p ${CCACHE_DIR}
+RUN ccache -M 5G \
+ && ccache -s
 
-# # Open3D repo
-# # Always keep /root/Open3D as the WORKDIR
-# COPY . /root/Open3D
-# WORKDIR /root/Open3D
+WORKDIR /root/Open3D
+RUN mkdir build \
+ && cd build \
+ && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_BLAS=ON \
+    -DBUILD_BLAS_FROM_SOURCE=ON \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_WEBRTC=OFF \
+    -DBUILD_GUI=ON \
+    -DBUILD_FILAMENT_FROM_SOURCE=ON \
+    -DBUILD_TENSORFLOW_OPS=OFF \
+    -DBUILD_PYTORCH_OPS=OFF \
+    -DBUILD_UNIT_TESTS=ON \
+    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+    .. \
+ && make -j$(nproc) \
+ && make install-pip-package -j$(nproc) \
+ && make install -j$(nproc)
 
-# # `docker build` will build Open3D. The unit tests will be executed later in
-# # during `docker run`
-# WORKDIR /root/Open3D
-# RUN mkdir build \
-#  && cd build \
-#  && cmake \
-#     -DUSE_BLAS=ON \
-#     -DCMAKE_BUILD_TYPE=Release \
-#     -DBUILD_SHARED_LIBS=ON \
-#     -DBUILD_GUI=ON \
-#     -DBUILD_WEBRTC=OFF \
-#     -DCMAKE_C_COMPILER=gcc \
-#     -DCMAKE_CXX_COMPILER=g++ \
-#     -DBUILD_FILAMENT_FROM_SOURCE=ON \
-#     -DBUILD_TENSORFLOW_OPS=OFF \
-#     -DBUILD_PYTORCH_OPS=OFF \
-#     -DBUILD_UNIT_TESTS=ON \
-#     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-#     .. \
-#  && make -j$(nproc) \
-#  && make install-pip-package -j$(nproc) \
-#  && make install -j$(nproc)
+# # Python 3.8
+# RUN conda create -y -n open3d38 python=3.8 \
+#  && source activate open3d38
+# RUN which python \
+#  && python --version
 
-# # Compress ccache folder, move to / directory (optional)
-# RUN ccache -s \
-#  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && tar -czf ${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
-#  && mv ${CCACHE_TAR_NAME}.tar.gz /
+# # Python 3.9
+# RUN conda create -y -n open3d39 python=3.9 \
+#  && source activate open3d39
+# RUN which python \
+#  && python --version
+
+# Compress ccache folder, move to / directory (optional)
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf ${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
+ && mv ${CCACHE_TAR_NAME}.tar.gz /
