@@ -1198,11 +1198,12 @@ if (WITH_FAISS)
 endif()
 
 # MKL/BLAS
+set(BUILD_BLAS_FROM_SOURCE ON)
 if(USE_BLAS)
     find_package(BLAS)
     find_package(LAPACK)
     find_package(LAPACKE)
-    if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+    if(NOT BUILD_BLAS_FROM_SOURCE AND BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
         message(STATUS "Using system BLAS/LAPACK")
         # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
         # Open3D. When building with this option, the Python wheel is less
@@ -1225,7 +1226,10 @@ if(USE_BLAS)
             LIBRARIES    ${OPENBLAS_LIBRARIES}
             DEPENDS      ext_openblas
         )
-        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        target_link_libraries(3rdparty_blas INTERFACE
+            /usr/lib/gcc/aarch64-linux-gnu/7/libgfortran.a
+            /usr/lib/gcc/aarch64-linux-gnu/7/libgcc.a
+        )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
