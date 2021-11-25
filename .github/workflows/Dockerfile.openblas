@@ -16,7 +16,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# Build dependencies
+# Minimal dependencies
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
@@ -49,30 +52,23 @@ RUN conda create -y -n open3d39 python=3.9 \
 RUN which python \
  && python --version
 
-# # Open3D dependencies
-# RUN apt-get update && apt-get install -y \
-#     apt-utils  \
-#     autoconf \
-#     build-essential \
-#     ccache \
-#     clang-7 \
-#     git  \
-#     libblas-dev  \
-#     libc++-7-dev \
-#     libc++abi-7-dev \
-#     libglu1-mesa-dev \
-#     liblapack-dev  \
-#     liblapacke-dev \
-#     libosmesa6-dev \
-#     libsdl2-dev \
-#     libtbb-dev \
-#     libtool \
-#     libudev-dev \
-#     libxi-dev \
-#     ninja-build \
-#     wget \
-#     xorg-dev \
-#  && rm -rf /var/lib/apt/lists/*
+# Open3D dependencies
+RUN apt-get update && apt-get install -y \
+    xorg-dev \
+    libglu1-mesa-dev \
+    python3-dev \
+    libsdl2-dev \
+    libc++-7-dev \
+    libc++abi-7-dev \
+    ninja-build \
+    libxi-dev \
+    gfortran \
+    libtbb-dev \
+    libosmesa6-dev \
+    libudev-dev \
+    autoconf \
+    libtool \
+ && rm -rf /var/lib/apt/lists/*
 
 # # No virtual environment is needed, default to python 3.6
 # RUN apt-get update && apt-get install -y \
