@@ -16,6 +16,7 @@ ENV SUDO=command
 
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
+    wget \
     libgl1 \
     libgomp1 \
  && rm -rf /var/lib/apt/lists/*
@@ -42,6 +43,6 @@ COPY *.whl /
 RUN pip install /*.whl
 
 # Run test
-RUN python -c "import open3d.core as o3c; print(o3c.Tensor(1) + o3c.Tensor(2))"
+RUN python -c "import open3d.core as o3c; print(o3c.Tensor.ones((2, 2)) @ o3c.Tensor.ones((2, 2)))"
 
 RUN echo "Docker build done."
