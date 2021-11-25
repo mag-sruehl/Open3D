@@ -32,14 +32,14 @@ RUN conda create -y -n open3d python=${PYTHON_VERSION} \
 RUN which python \
  && python --version
 
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
 # # Open3D repo
 # # Always keep /root/Open3D as the WORKDIR
-# COPY . /root/Open3D
-# WORKDIR /root/Open3D
+COPY *.whl /
 
 # Open3D Python dependencies
-RUN wget https://github.com/isl-org/open3d_downloads/releases/download/linux-wheel-static/open3d-0.13.0+7eee2de4c-cp38-cp38-linux_aarch64.whl \
- && pip install open3d-0.13.0+7eee2de4c-cp38-cp38-linux_aarch64.whl
+RUN pip install /*.whl
 
 # Run test
 RUN python -c "import open3d.core as o3c; print(o3c.Tensor(1) + o3c.Tensor(2))"
