@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     ccache \
+    clang-7 \
  && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/miniconda3/bin:${PATH}"
@@ -99,10 +100,6 @@ RUN python -m pip install -U \
 # -DBUILD_TENSORFLOW_OPS=OFF \
 # -DBUILD_PYTORCH_OPS=OFF \
 # -DBUILD_UNIT_TESTS=ON \
-
-RUN apt-get update && apt-get install -y \
-    clang-7 \
- && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir build \
  && cd build \
