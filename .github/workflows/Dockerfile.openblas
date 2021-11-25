@@ -2,9 +2,12 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
+# For miniconda and the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
 ARG CMAKE_VER
 ARG CCACHE_TAR_NAME
-
 RUN if [ -z "${CMAKE_VER}"       ]; then echo "Error: ARG CMAKE_VER       not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
 
@@ -28,13 +31,23 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.
  && conda --version
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 
-# Python 3.6
+# Python 3.7
+RUN conda create -y -n open3d37 python=3.7 \
+ && source activate open3d37
+RUN which python \
+ && python --version
 
 # Python 3.7
-
-# Python 3.8
+RUN conda create -y -n open3d38 python=3.8 \
+ && source activate open3d38
+RUN which python \
+ && python --version
 
 # Python 3.9
+RUN conda create -y -n open3d39 python=3.9 \
+ && source activate open3d39
+RUN which python \
+ && python --version
 
 # # Open3D dependencies
 # RUN apt-get update && apt-get install -y \
