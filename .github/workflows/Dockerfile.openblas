@@ -16,16 +16,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# Minimal dependencies
+# Minimal dependencies for running Docker
 # wget    : for downloading
 # libgl1  : available on Ubuntu ARM desktop by default
 # libgomp1: available on Ubuntu ARM desktop by default
-# ccache  : only needed during docker build
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libgomp1 \
-    ccache \
+ && rm -rf /var/lib/apt/lists/*
+
+# Minimal dependencies for building
+RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
+    curl \
  && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/miniconda3/bin:${PATH}"
