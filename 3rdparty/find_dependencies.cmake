@@ -1198,7 +1198,6 @@ if (WITH_FAISS)
 endif()
 
 # MKL/BLAS
-
 if(USE_BLAS)
     if(NOT BUILD_BLAS_FROM_SOURCE)
         find_package(BLAS)
