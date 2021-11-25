@@ -1198,23 +1198,28 @@ if (WITH_FAISS)
 endif()
 
 # MKL/BLAS
-set(BLAS_BUILD_FROM_SOURCE ON)
+
 if(USE_BLAS)
-    find_package(BLAS)
-    find_package(LAPACK)
-    find_package(LAPACKE)
-    if(NOT BLAS_BUILD_FROM_SOURCE AND BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-        message(STATUS "Using system BLAS/LAPACK")
-        # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
-        # Open3D. When building with this option, the Python wheel is less
-        # portable as it depends on the external shared libraries.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-            ${BLAS_LIBRARIES}
-            ${LAPACK_LIBRARIES}
-            ${LAPACKE_LIBRARIES}
-        )
-    else()
-        message(STATUS "Building OpenBLAS with LAPACK from source")
+    if(NOT BUILD_BLAS_FROM_SOURCE)
+        find_package(BLAS)
+        find_package(LAPACK)
+        find_package(LAPACKE)
+
+        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+            message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+                ${BLAS_LIBRARIES}
+                ${LAPACK_LIBRARIES}
+                ${LAPACKE_LIBRARIES}
+            )
+        else()
+            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting BUILD_BLAS_FROM_SOURCE=ON.")
+            set(BUILD_BLAS_FROM_SOURCE ON)
+        end()
+    endif()
+
+    if(BUILD_BLAS_FROM_SOURCE)
+        message(STATUS "Building OpenBLAS and LAPACK from source")
 
         # Check gfortran installation.
         find_program(gfortran_bin "gfortran")
