@@ -1214,7 +1214,7 @@ if(USE_BLAS)
         else()
             message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting BUILD_BLAS_FROM_SOURCE=ON.")
             set(BUILD_BLAS_FROM_SOURCE ON)
-        end()
+        endif()
     endif()
 
     if(BUILD_BLAS_FROM_SOURCE)
