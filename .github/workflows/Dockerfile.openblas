@@ -142,8 +142,7 @@ RUN which python \
     pip=="21.1.1" \
     wheel=="0.35.1" \
     setuptools=="50.3.2" \
-    yapf=="0.30.0" \
-    pytest=="6.0.1"
+    yapf=="0.30.0"
 
 RUN rm -rf build \
  && mkdir build \
@@ -166,8 +165,7 @@ RUN which python \
     pip=="21.1.1" \
     wheel=="0.35.1" \
     setuptools=="50.3.2" \
-    yapf=="0.30.0" \
-    pytest=="6.0.1"
+    yapf=="0.30.0"
 
 RUN rm -rf build \
  && mkdir build \
@@ -190,8 +188,7 @@ RUN which python \
     pip=="21.1.1" \
     wheel=="0.35.1" \
     setuptools=="50.3.2" \
-    yapf=="0.30.0" \
-    pytest=="6.0.1"
+    yapf=="0.30.0"
 
 RUN rm -rf build \
  && mkdir build \
