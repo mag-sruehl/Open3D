@@ -47,8 +47,6 @@ RUN which gcc \
  && which g++ \
  && g++ --version
 
-ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
-
 # Download ccache from GCS bucket
 # If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
 # Example directory structure:
@@ -142,30 +140,33 @@ RUN rm -rf build \
  && make install -j$(nproc)
 RUN cp build/lib/python_package/pip_package/*.whl /
 
-# Python 3.9 ###################################################################
-RUN conda create -y -n open3d39 python=3.9 \
- && source activate open3d39
-RUN which python \
- && python --version
-RUN python -m pip install -U \
-    pip=="21.1.1" \
-    wheel=="0.35.1" \
-    setuptools=="50.3.2" \
-    yapf=="0.30.0" \
-    pytest=="6.0.1" \
-    scipy=="1.5.4"
+RUN ls -alh build/lib/python_package/pip_package/
+RUN ls -alh /
 
-RUN rm -rf build \
- && mkdir build \
- && cd build \
- && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl /
+# # Python 3.9 ###################################################################
+# RUN conda create -y -n open3d39 python=3.9 \
+#  && source activate open3d39
+# RUN which python \
+#  && python --version
+# RUN python -m pip install -U \
+#     pip=="21.1.1" \
+#     wheel=="0.35.1" \
+#     setuptools=="50.3.2" \
+#     yapf=="0.30.0" \
+#     pytest=="6.0.1" \
+#     scipy=="1.5.4"
+
+# RUN rm -rf build \
+#  && mkdir build \
+#  && cd build \
+#  && cmake \
+#     -DCMAKE_BUILD_TYPE=Release \
+#     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+#     .. \
+#  && make -j$(nproc) \
+#  && make install-pip-package -j$(nproc) \
+#  && make install -j$(nproc)
+# RUN cp build/lib/python_package/pip_package/*.whl /
 
 # Compress ccache folder, move to / directory (optional)
 RUN ccache -s \
