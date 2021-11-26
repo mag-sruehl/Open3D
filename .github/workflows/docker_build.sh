@@ -82,6 +82,11 @@ openblas_build() {
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+
+    # Extract wheels
+    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+        bash -c "cp /*.whl /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/*.whl"
 }
 
 cuda_wheel_build() {
