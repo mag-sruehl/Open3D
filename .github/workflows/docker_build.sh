@@ -78,10 +78,10 @@ openblas_build() {
                  -f .github/workflows/Dockerfile.openblas .
     popd
 
-    # # Extract ccache
-    # docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-    #     bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
-    #           && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+    # Extract ccache
+    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
 cuda_wheel_build() {
