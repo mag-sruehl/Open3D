@@ -47,6 +47,8 @@ RUN which gcc \
  && which g++ \
  && g++ --version
 
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
 # Download ccache from GCS bucket
 # If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
 # Example directory structure:
