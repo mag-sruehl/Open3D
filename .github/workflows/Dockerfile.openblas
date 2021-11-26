@@ -115,6 +115,7 @@ RUN rm -rf build \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
+RUN cp build/lib/python_package/pip_package/*.whl /
 
 # Python 3.8 ###################################################################
 RUN conda create -y -n open3d38 python=3.8 \
@@ -139,6 +140,7 @@ RUN rm -rf build \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
+RUN cp build/lib/python_package/pip_package/*.whl /
 
 # Python 3.9 ###################################################################
 RUN conda create -y -n open3d39 python=3.9 \
@@ -163,6 +165,7 @@ RUN rm -rf build \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
+RUN cp build/lib/python_package/pip_package/*.whl /
 
 # Compress ccache folder, move to / directory (optional)
 RUN ccache -s \
